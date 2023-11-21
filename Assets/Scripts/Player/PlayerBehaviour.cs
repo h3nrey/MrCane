@@ -28,15 +28,16 @@ public class PlayerBehaviour : MonoBehaviour {
     [Header("Ground Point")]
     [SerializeField] private Transform groundPoint;
 
-    [SerializeField] private float groundRadius;
+    [SerializeField] private Vector2 groundCheckSize;
     [SerializeField] private LayerMask groundLayerMask;
     [SerializeField] private int groundLayer;
 
     [Header("Cane")]
     [SerializeField] private GameObject cane;
-
+    
     [SerializeField] private float caneJumpForce;
     [SerializeField] private bool holdingCane;
+    private Vector3 caneScale;
 
     private Vector2 moveInput;
     private Vector2 vel;
@@ -57,10 +58,13 @@ public class PlayerBehaviour : MonoBehaviour {
 
     // Start is called before the first frame update
     private void Start() {
+        // Components
         rb = GetComponent<Rigidbody2D>();
 
         rb.gravityScale = baseGravityScale;
+        caneScale = cane.transform.localScale;
 
+        // Events
         touchGround += DoCaneRicochet;
     }
 
@@ -147,13 +151,13 @@ public class PlayerBehaviour : MonoBehaviour {
     }
 
     private void CheckIfIsGrounded() {
-        isGrounded = Physics2D.OverlapCircle(groundPoint.position, groundRadius, groundLayerMask);
+        isGrounded = Physics2D.OverlapBox(groundPoint.position, groundCheckSize, groundLayerMask);
     }
 
     #region Cane
 
     private void ActiveCane() {
-        if (isGrounded) return;
+        if (isGrounded && holdingCane) return;
         holdingCane = true;
         cane.SetActive(true);
     }
@@ -166,7 +170,6 @@ public class PlayerBehaviour : MonoBehaviour {
     private void DoCaneRicochet() {
         if (holdingCane) {
             //rb.velocity = new Vector2(vel.x, (vel.y + caneJumpForce) * Time.fixedDeltaTime);
-            Vector3 caneScale = cane.transform.localScale;
             cane.transform.localScale = new Vector3(caneScale.x, caneScale.y / 2, caneScale.z);
             Coroutines.DoAfter(() =>
                 rb.velocity = new Vector2(vel.x, (vel.y + caneJumpForce) * Time.fixedDeltaTime),
@@ -202,7 +205,7 @@ public class PlayerBehaviour : MonoBehaviour {
 
     private void OnDrawGizmosSelected() {
         Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(groundPoint.position, groundRadius);
+        Gizmos.DrawWireCube(groundPoint.position, groundCheckSize);
     }
 
     #endregion Gizmos
